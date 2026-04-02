@@ -107,3 +107,26 @@ python synthetic_data_pipeline.py
 - `synthetic_data_pipeline.py`는 12,000 배치를 처리하며, 예상 소요 시간은 약 **48시간**입니다.
 - HuggingFace 모델을 처음 실행할 때 자동으로 다운로드됩니다. 네트워크 환경과 모델 크기에 따라 상당한 시간이 소요될 수 있습니다.
 - HuggingFace에서 gated 모델을 사용하는 경우 `huggingface-cli login`으로 인증이 필요할 수 있습니다.
+
+---
+
+## 트러블슈팅
+
+### flash_attn ABI 호환성 에러
+
+**증상**: `data_generation.py` 실행 시 아래와 같은 에러 발생
+
+```
+ImportError: flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEiPKcS2_ib
+```
+
+**원인**: 기존에 시스템에 설치된 `flash_attn`이 현재 사용 중인 PyTorch 버전과 다른 ABI로 빌드되어 심볼 불일치가 발생합니다. `vllm` 설치 시 PyTorch가 업데이트되면서 기존 `flash_attn`과 호환되지 않게 됩니다.
+
+**해결 방법**: `flash_attn`을 현재 PyTorch에 맞게 재빌드합니다.
+
+```bash
+pip uninstall flash-attn -y
+pip install flash-attn --no-build-isolation
+```
+
+> **참고**: `flash-attn` 빌드에는 수 분~수십 분이 소요될 수 있습니다. `--no-build-isolation` 플래그는 현재 환경의 PyTorch를 사용하여 빌드하도록 합니다.
